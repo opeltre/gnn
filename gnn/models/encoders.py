@@ -12,24 +12,24 @@ class MoleculeEncoder(nn.Module):
     Note:
     ----
     Expects `gnn.data.Molecule` instances as returned by `Molecule.from_qm9`:
-    - `mol.pos` points to first 3 node features,
-    - `mol.z` points to 4th node feature,
+    - `mol.pos` spatial node features,
+    - `mol.nodes` contains a single node feature (atomic number),
     - `mol.edges` contains scalar edge distances.
     """
 
     def __init__(self, node_features: int = 32, edge_features: int = 32):
         super().__init__()
         # encode atomic numbers
-        self.node_encoder = nn.Sequential(OneHot(12), MLP((12, 128, node_features - 3)))
+        self.node_encoder = nn.Sequential(OneHot(12), MLP((12, 128, node_features)))
         # encode inter-atomic distances
         self.edge_encoder = nn.Sequential(
             RBF(16, (0, 3)), MLP((16, 128, edge_features))
         )
 
     def forward(self, mol: gnn.data.Molecule):
-        node_features = self.node_encoder(mol.z.to(torch.int32).squeeze(-1))
+        node_features = self.node_encoder(mol.nodes)
         edge_features = self.edge_encoder(mol.edges)
-        return mol.update(z=node_features, edges=edge_features)
+        return mol.update(nodes=node_features, edges=edge_features)
 
 
 class MoleculeEncoder2(MoleculeEncoder):

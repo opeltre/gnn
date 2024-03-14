@@ -62,6 +62,7 @@ class Hypergraph:
         edges: Optional[Tensor] = None,
         faces: Optional[Tensor] = None,
         *args,
+        **kwargs,
     ) -> Hypergraph:
         """
         Hypergraph instance with updated features.
@@ -69,7 +70,13 @@ class Hypergraph:
         features = []
         for xi, yi in zip(self.features, [nodes, edges, faces, *args]):
             features.append(yi if yi is not None else xi)
-        return self.__class__(self.cells, features, self.sizes, self.device)
+        return self.__class__(
+            self.cells,
+            features=features,
+            batch=self.batch,
+            device=self.device,
+            **kwargs,
+        )
 
     def update_(
         self,
@@ -82,7 +89,7 @@ class Hypergraph:
         In-place update.
         """
         for i, yi in enumerate([nodes, edges, faces, *args]):
-            if i < len(self.features):
+            if i < len(self.features) and yi is not None:
                 self.features[i] = yi
             elif yi is not None:
                 self.features.append(yi)

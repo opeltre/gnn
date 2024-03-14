@@ -54,6 +54,7 @@ class MessagePassing(nn.Module):
         return torch.cat((x_i, x_j, e_ij), -1)
 
     def forward(self, graph: Graph) -> Graph:
+        i, j = graph.edge_indices
         x_ij = self.message_features(graph)
         M_ij = self.message(x_ij)
         y_j = scatter(M_ij, j, -2, reduce=self.reduce)

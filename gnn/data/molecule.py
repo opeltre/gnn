@@ -6,45 +6,37 @@ from torch import Tensor
 
 from .hypergraph import Hypergraph
 
-class Molecule(Hypergraph):
-    """ 
-    Hypergraph with spatial node features in front. 
 
-    Properties:
-    ----------
-        pos (`torch.Tensor`): 
-            returns `self.nodes[:3]`,
-        z (`torch.Tensor`): 
-            returns `self.nodes[3:]`.
+class Molecule(Hypergraph):
+    """
+    Hypergraph with spatial node features `pos`.
     """
 
-    @property
-    def pos(self):
-        return self.features[0][:,:3]
-
-    @property
-    def z(self):
-        return self.features[0][:,3:]
-
-    def update(
-        self, 
+    def __init__(
+        self,
+        cells: List[Tensor],
+        features: List[Tensor],
         pos: Optional[Tensor] = None,
-        z: Optional[Tensor] = None,
-        **kwargs
-    ) -> Molecule:
-        if pos is None and z is None:
-            return super().update(**kwargs)
-        node_features = (
-            self.pos if pos is None else pos,
-            self.z if z is None else z
-        )
-        node_features = torch.cat(node_features, -1)
-        return super().update(nodes=node_features, **kwargs)
+        batch: Optional[Tensor] = None,
+        device: Optional[Union[str, torch.device]] = None,
+    ):
+        super().__init__(cells, features, batch, device)
+        self.pos = pos if pos is not None else torch.zeros(features[0].shape[0], 3)
+
+    def update(self, pos: Optional[Tensor] = None, **kwargs) -> Molecule:
+        out = super().update(**kwargs)
+        return out.update_(pos=pos)
+
+    def update_(self, pos: Optional[Tensor] = None, **kwargs) -> Molecule:
+        super().update_(**kwargs)
+        if pos is not None:
+            self.pos = pos
+        return self
 
     @classmethod
-    def from_qm9(cls, data:object) -> Molecule:
+    def from_qm9(cls, data: object) -> Molecule:
         cells = [data.edge_index]
         i, j = data.edge_index
-        nodes = torch.cat((data.pos, data.z.unsqueeze(-1)), -1)
+        nodes = data.z
         edges = (data.pos[i] - data.pos[j]).norm(dim=[-1])
-        return cls(cells, [nodes, edges], batch=data.batch)
+        return cls(cells, [nodes, edges], pos=data.pos, batch=data.batch)

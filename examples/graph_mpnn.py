@@ -27,14 +27,11 @@ mol = encoder(ch4)
 
 # message-passing layer
 mp_layer = gnn.MessagePassing(
-    message = nn.Sequential(
-        gnn.Cat(-1),
-        gnn.MLP((2 * n0 + n1, 128, n0))
-    ),
+    message = gnn.MLP((2 * n0 + n1, 128, n0)),
     update = lambda G, y: G.update(nodes = G.nodes + y)
 )
 
-# MPNN with shared weights 
+# MPNN with layers sharing weights 
 mpnn = nn.Sequential(
     mp_layer, 
     mp_layer,
@@ -43,6 +40,7 @@ mpnn = nn.Sequential(
 
 def main():
     for batch in tqdm(loader):
+        # todo: regression tasks on batch.y
         mol0 = Molecule.from_qm9(batch)
         mol1 = encoder(mol0)
         mol2 = mpnn(mol1)
