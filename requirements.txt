@@ -1,0 +1,7 @@
+scipy
+matplotlib
+numpy
+torch
+torch_geometric
+torch-scatter
+torch-cluster
