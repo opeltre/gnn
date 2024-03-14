@@ -1,3 +1,7 @@
 # torch-geometric datasets
 
-go here
+Go here...
+
+Check where `gnn.datadir` points to!
+
+

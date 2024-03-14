@@ -1,2 +1,4 @@
 **/__pycache__
-
+datasets/*
+datasets/pyg/*
+! datasets/pyg/README.md
