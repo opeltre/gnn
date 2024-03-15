@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
-import torch_geometric as pyg
+from torch_scatter import scatter
+
 import gnn
 from .common import OneHot, RBF, MLP
 
@@ -44,4 +45,14 @@ class MoleculeEncoder2(MoleculeEncoder):
     of the triangle `(ijk)`.
     """
 
-    pass
+    def __init__(
+        self, node_features: int = 32, edge_features: int = 32, face_features: int = 32
+    ):
+        super().__init__(node_features, edge_features)
+        # encode angles
+        self.face_encoder = nn.Sequential(
+            RBF(16, (0, 1)), MLP((16, 128, face_features))
+        )
+
+    def forward(self, mol: gnn.data.Molecule):
+        mol = super().forward(mol)

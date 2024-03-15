@@ -4,6 +4,8 @@ from typing import Union, Optional, List
 import torch
 from torch import Tensor, LongTensor
 
+from torch_scatter import scatter
+
 
 class Hypergraph:
     """
@@ -136,6 +138,34 @@ class Hypergraph:
         Dimension of carried features (<= dim).
         """
         return len(self.features)
+
+    def get_faces_from_edges(self) -> Tensor:
+        """
+        Enumerate faces (ijk) between vertices (ij) and (jk).
+        """
+        # Note: underscored variable names should reflect the indexing value,
+        # e.g. `var_src` stands for a variable `var` reindexed by `src`.
+        src, tgt = self.edge_indices
+        ones = torch.ones(src.shape, dtype=src.dtype, device=src.device)
+        zero = torch.zeros(1, dtype=src.dtype, device=src.device)
+        # edges leaving i, indexed by i
+        n_src = scatter(ones, src)
+        # edges leaving j, indexed by ij
+        n_edge = n_src[tgt]
+        # chunks of edges, indexed by i and ij
+        begin_src = torch.cat((zero, n_src.cumsum(0)))
+        begin_edge = torch.cat((zero, n_edge.cumsum(0)))
+        # first edge index, by face index
+        face_range = torch.arange(begin_edge[-1])
+        edge1_face = torch.bucketize(face_range, begin_edge[1:], right=True)
+        i, j = src[edge1_face], tgt[edge1_face]
+        # second edge index, by face index
+        local_idx = face_range - begin_edge[edge1_face]
+        edge2_face = local_idx + begin_src[j]
+        assert (j == src[edge2_face]).prod()
+        k = tgt[edge2_face]
+        # stack and filter U-turns
+        return torch.stack((i, j, k))[:, i != k]
 
     def to(self, device: Union[str, torch.device]) -> Hypergraph:
         """Move graph instance to device."""

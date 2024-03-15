@@ -34,9 +34,32 @@ class Molecule(Hypergraph):
         return self
 
     @classmethod
-    def from_qm9(cls, data: object) -> Molecule:
+    def from_qm9(cls, data: object, degree: int = 1) -> Molecule:
+        """
+        Parse molecule attributes from a `pyg.data.Data` object.
+
+        Parameters:
+            data (`pyg.data.Data | pyg.data.Batch`):
+                molecule descriptor as yielded by `pyg.datasets.QM9`
+            degree (`int`) = 1:
+                with `degree = 2`, also include 2-faces (ijk) obtained
+                for any consecutive edges (ij) and (jk), carrying a
+                scalar angle feature.
+        """
         cells = [data.edge_index]
         i, j = data.edge_index
         nodes = data.z
         edges = (data.pos[i] - data.pos[j]).norm(dim=[-1])
-        return cls(cells, [nodes, edges], pos=data.pos, batch=data.batch)
+        mol = cls(cells, [nodes, edges], pos=data.pos, batch=data.batch)
+        if degree == 1:
+            return mol
+        cells_2 = mol.get_faces_from_edges()
+        mol.cells.append(cells_2)
+        i, j, k = cells_2
+        v_ji, v_jk = mol.pos[i] - mol.pos[j], mol.pos[k] - mol.pos[j]
+        n_ji, n_jk = v_ji.norm(dim=[-1]), v_jk.norm(dim=[-1])
+        cos_ijk = (v_ji * v_jk).sum([-1]) / (n_ji * n_jk)
+        if degree == 2:
+            return mol.update(faces=cos_ijk)
+        # TODO: Compute 3-faces (same logic as `get_faces_from_edges`)
+        raise NotImplementedError("Only 2 faces are currently supported.")

@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch_geometric as pyg
+from torch_scatter import scatter
 
 import gnn
 from gnn.data import Molecule
