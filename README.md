@@ -1,11 +1,20 @@
 # Graph Neural Networks
 
+This didactic repository contains example code for desiging message-passing layers on graph and hypergraph structures.
+
+It was prepared for a [datacraft](https://datacraft.paris) state-of-the-art session on 
+[_Message-Passing Neural Networks for Generation of Chemical Structures_](https://github.com/opeltre/gnn/blob/main/Message%20Passing%20Neural%20Networks.pdf) (slides).
+
 ## Installation 
+
+With python 3.9.18:
 
 ```sh
 $ git clone git@github.com:opeltre/gnn && cd gnn
 $ pip install -r requirements.txt && pip install -e .
 ```
+With python 3.12, installation of `torch-scatter` may fail depending on the `torch` version. 
+A working `requirements.txt` or `pyproject.toml` should be uploaded!
 
 ## Useful links and references
 
@@ -31,7 +40,7 @@ $ pip install -r requirements.txt && pip install -e .
 
 The QM9 dataset contains ~130k small organic molecules, its upstream url is [quantum-machine.org](https://quantum-machine.org/datasets). 
 
-It may be readily loaded with `torch_geometric`, see [QM9](https://pytorch-geometric.readthedocs.io/en/latest/generated/torch_geometric.datasets.QM9.html#torch_geometric.datasets.QM9) 
+An interface to QM9 ships with `torch_geometric`, see [QM9](https://pytorch-geometric.readthedocs.io/en/latest/generated/torch_geometric.datasets.QM9.html#torch_geometric.datasets.QM9) 
 and [examples/graph_mpnn.py](examples/graph_mpnn.py)
 
 ### QM7 dataset 
